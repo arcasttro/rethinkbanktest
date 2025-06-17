@@ -8,11 +8,12 @@ Este é o repositório do Rethink Bank Test. Ele está disponível para você co
 
 Este mesmo repositório está online, em https://points-app-backend.vercel.app/
 
-Através deste link, você poderá fazer requisições diretas para a API para cumprir seu desafio. 
+Através deste link, você poderá fazer requisições diretas para a API para cumprir seu desafio.
 
-No Rethink Test Bank o usuário pode se cadastrar, enviar ou receber pontos e também guardar pontos em caixinhas. A rota de cadastro é a única pública, todas as demais são protegidas por token que é adquirido na rota de login. Atenção: o Token tem duração de apenas 10 minutos. 
+No Rethink Test Bank o usuário pode se cadastrar, enviar ou receber pontos e também guardar pontos em caixinhas. A rota de cadastro é a única pública, todas as demais são protegidas por token que é adquirido na rota de login. Atenção: o Token tem duração de apenas 10 minutos.
 
-A jornada do usuário é: 
+A jornada do usuário é:
+
 - Cadastra
 - Confirma email
 - Faz login
@@ -21,25 +22,23 @@ A jornada do usuário é:
 - Confere o saldo
 - Exclui sua conta
 
-Calma, os endpoints e os contratos estão logo abaixo. 
+Calma, os endpoints e os contratos estão logo abaixo.
 
 ## Instruções
 
 Você deverá:
 
-1- Criar testes end-to-end automatizados da jornada do usuário usando Jest OU Karatê OU Robot Framework. Os testes deverão registrar evidências. 
+1- Criar testes end-to-end automatizados da jornada do usuário usando Jest OU Karatê OU Robot Framework. Os testes deverão registrar evidências.
 
 2- Responder as seguintes perguntas:
 
     a- Há bugs? Se sim, quais são e quais são os cenários esperados?
-    
+
     b- Se houver bugs, classifique-os em nível de criticidade.
-    
+
     c- Diante do cenário, o sistema está pronto para subir em produção?
-    
 
-
-Os testes end-to-end deverão ser entregues em um repositório público do GitHub, e as respostas do item 2 deverão estar no readme.md do repositório. 
+Os testes end-to-end deverão ser entregues em um repositório público do GitHub, e as respostas do item 2 deverão estar no readme.md do repositório.
 
 Além disso, no readme.md deixe claro:
 
@@ -47,10 +46,9 @@ Além disso, no readme.md deixe claro:
 
 - As respostas do Item 2.
 
-  
-
-
 ## Rotas e Contratos
+
+Todas estas rotas são verificáveis via Swagger que está na rota /docs
 
 ### 1. Cadastro de Usuário
 
@@ -68,12 +66,11 @@ Além disso, no readme.md deixe claro:
 }
 ```
 
-Validação: 
+Validação:
 CPF: 11 números | Único
 Full_name: pelo menos dois nomes
 email: Único
-password: Pelo menos um símbolo especial, números, uma letra maiúscula e uma minúscula e pelo menos 8 caracteres no total. 
-
+password: Pelo menos um símbolo especial, números, uma letra maiúscula e uma minúscula e pelo menos 8 caracteres no total.
 
 **Response 201**
 
@@ -124,8 +121,6 @@ E-mail confirmado com sucesso.
 ```
 
 ---
-
-
 
 ### 4. Excluir Conta (Soft Delete)
 
@@ -286,6 +281,6 @@ Authorization: Bearer `<session_jwt>`
 
 ## Sucesso no teste
 
-Ah, o joao@example.com com a senha Senha@123 normalmente tem pontos para enviar. 
+Ah, o joao@example.com com a senha Senha@123 normalmente tem pontos para enviar.
 
 Esperamos você em breve com a gente! :D
