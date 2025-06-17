@@ -901,6 +901,10 @@ app.get('/points/saldo', ensureAuth, async (req, res) => {
 });
 
 app.use((req, res) => {
+      if (req.path.startsWith('/docs')) {
+    return res.status(404).end();
+  }
+
   res.status(404).send(`<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
