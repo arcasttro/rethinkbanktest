@@ -4,9 +4,13 @@ import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import { supabase } from './supabaseClient.js';
+import { setupSwagger } from './swagger.js';
+
 
 dotenv.config();
 const app = express();
+setupSwagger(app);
+
 app.use(express.json());
 
 // Configuração do transportador de e-mail
@@ -44,7 +48,105 @@ function ensureAuth(req, res, next) {
   }
 }
 
-// --- 1. Cadastro ---
+/**
+ * @openapi
+ * /cadastro:
+ *   post:
+ *     summary: Cadastra um novo usuário e retorna token de confirmação de e-mail
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - cpf
+ *               - full_name
+ *               - email
+ *               - password
+ *               - confirmPassword
+ *             properties:
+ *               cpf:
+ *                 type: string
+ *                 description: CPF com exatamente 11 dígitos numéricos.
+ *                 pattern: '^[0-9]{11}$'
+ *                 example: '12345678901'
+ *               full_name:
+ *                 type: string
+ *                 description: Nome completo contendo pelo menos nome e sobrenome.
+ *                 pattern: '^\\S+\\s+\\S+'
+ *                 example: 'João da Silva'
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email válido para confirmação.
+ *                 example: 'joao@example.com'
+ *               password:
+ *                 type: string
+ *                 description: Senha com no mínimo 8 caracteres, incluindo ao menos uma letra maiúscula, uma minúscula e um símbolo especial.
+ *                 pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\W).{8,}$'
+ *                 example: 'Senha@123'
+ *               confirmPassword:
+ *                 type: string
+ *                 description: Deve ser igual ao campo "password".
+ *                 example: 'Senha@123'
+ *     responses:
+ *       '201':
+ *         description: Usuário criado com sucesso. Retorna mensagem e token de confirmação.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: 'Cadastro realizado com sucesso.'
+ *                 confirmToken:
+ *                   type: string
+ *                   description: JWT de confirmação de e-mail com validade de 24h.
+ *       '400':
+ *         description: Erro de validação dos dados de entrada ou falha ao inserir no banco.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *             examples:
+ *               invalidCpf:
+ *                 summary: CPF inválido
+ *                 value:
+ *                   error: 'CPF inválido'
+ *               missingName:
+ *                 summary: Nome completo obrigatório
+ *                 value:
+ *                   error: 'Nome completo obrigatório'
+ *               passwordMismatch:
+ *                 summary: Senhas não conferem
+ *                 value:
+ *                   error: 'Senhas não conferem'
+ *               weakPassword:
+ *                 summary: Senha fraca
+ *                 value:
+ *                   error: 'Senha fraca'
+ *               dbError:
+ *                 summary: Erro ao inserir usuário
+ *                 value:
+ *                   error: 'Erro interno ao criar usuário'
+ *       '500':
+ *         description: Erro interno do servidor.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: 'Erro interno ao criar usuário'
+ */
 app.post('/cadastro', async (req, res) => {
   const { cpf, full_name, email, password, confirmPassword } = req.body;
   // Validações básicas
@@ -81,7 +183,36 @@ app.post('/cadastro', async (req, res) => {
   });
 });
 
-// --- 2. Confirmação de E-mail ---
+/**
+ * @openapi
+ * /confirm-email:
+ *   get:
+ *     summary: Confirma o e-mail do usuário a partir de um token
+ *     tags:
+ *       - Auth
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: JWT de confirmação de e-mail gerado no cadastro (valido por 24h)
+ *     responses:
+ *       '200':
+ *         description: E-mail confirmado com sucesso.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: 'E-mail confirmado com sucesso.'
+ *       '400':
+ *         description: Token inválido ou expirado.
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: 'Token inválido ou expirado.'
+ */
 app.get('/confirm-email', async (req, res) => {
   const { token } = req.query;
   try {
@@ -96,7 +227,65 @@ app.get('/confirm-email', async (req, res) => {
   }
 });
 
-// --- 3. Login ---
+/**
+ * @openapi
+ * /login:
+ *   post:
+ *     summary: Autentica um usuário e retorna um token de sessão
+ *     tags:
+ *       - Auth
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email cadastrado e confirmado
+ *                 example: joao@example.com
+ *               password:
+ *                 type: string
+ *                 description: Senha do usuário
+ *                 example: Senha@123
+ *     responses:
+ *       '200':
+ *         description: Autenticação bem-sucedida, retorna token JWT válido por 10 minutos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 token:
+ *                   type: string
+ *                   description: JWT de sessão
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *       '400':
+ *         description: Credenciais inválidas (usuário não encontrado ou senha incorreta)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Credenciais inválidas
+ *       '403':
+ *         description: E-mail ainda não confirmado pelo usuário
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: E-mail não confirmado
+ */
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   const { data: user, error } = await supabase
@@ -159,7 +348,60 @@ app.post('/reset-password', async (req, res) => {
   }
 });
 
-// --- 6. Excluir Conta (soft delete) ---
+/**
+ * @openapi
+ * /account:
+ *   delete:
+ *     summary: Exclui a conta do usuário (soft delete)
+ *     tags:
+ *       - Auth
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - password
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 description: Senha atual do usuário para confirmação da exclusão
+ *                 example: Senha@123
+ *     responses:
+ *       '200':
+ *         description: Conta marcada como deletada com sucesso.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Conta marcada como deletada.
+ *       '400':
+ *         description: Senha inválida ou requisição mal formada.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Senha inválida
+ *       '401':
+ *         description: Não autorizado (JWT faltando, inválido ou expirado).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Não autorizado
+ */
 app.delete('/account', ensureAuth, async (req, res) => {
   const { password } = req.body;
   const { data: user } = await supabase
@@ -179,7 +421,85 @@ app.delete('/account', ensureAuth, async (req, res) => {
   res.json({ message: 'Conta marcada como deletada.' });
 });
 
-// --- 7. Enviar Pontos ---
+/**
+ * @openapi
+ * /points/send:
+ *   post:
+ *     summary: Envia pontos de um usuário autenticado para outro usuário
+ *     tags:
+ *       - Points
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - recipientCpf
+ *               - amount
+ *             properties:
+ *               recipientCpf:
+ *                 type: string
+ *                 description: CPF do destinatário (11 dígitos numéricos)
+ *                 pattern: '^[0-9]{11}$'
+ *                 example: '10987654321'
+ *               amount:
+ *                 type: integer
+ *                 description: Quantidade de pontos a enviar (deve ser maior que zero e não exceder o saldo)
+ *                 minimum: 1
+ *                 example: 50
+ *     responses:
+ *       '200':
+ *         description: Pontos enviados com sucesso.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: 'Pontos enviados com sucesso.'
+ *       '400':
+ *         description: Requisição inválida ou saldo insuficiente.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *             examples:
+ *               invalidValue:
+ *                 summary: Valor inválido
+ *                 value:
+ *                   error: 'Valor inválido'
+ *               insufficientBalance:
+ *                 summary: Saldo insuficiente
+ *                 value:
+ *                   error: 'Saldo insuficiente'
+ *       '401':
+ *         description: Não autorizado (JWT faltando, inválido ou expirado).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: 'Não autorizado'
+ *       '404':
+ *         description: Usuário destinatário não encontrado ou inativo.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: 'Usuário destino não encontrado'
+ */
 app.post('/points/send', ensureAuth, async (req, res) => {
   const { recipientCpf, amount } = req.body;
   const amt = Number(amount);
@@ -216,7 +536,55 @@ app.post('/points/send', ensureAuth, async (req, res) => {
   res.json({ message: 'Pontos enviados com sucesso.' });
 });
 
-// --- 8. Extrato de Pontos ---
+/**
+ * @openapi
+ * /points/extrato:
+ *   get:
+ *     summary: Retorna o extrato de transações de pontos do usuário autenticado
+ *     tags:
+ *       - Points
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: Lista de transações de envio e recebimento de pontos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     format: uuid
+ *                     example: '550e8400-e29b-41d4-a716-446655440000'
+ *                   from_user:
+ *                     type: string
+ *                     format: uuid
+ *                     example: '550e8400-e29b-41d4-a716-446655440001'
+ *                   to_user:
+ *                     type: string
+ *                     format: uuid
+ *                     example: '550e8400-e29b-41d4-a716-446655440002'
+ *                   amount:
+ *                     type: integer
+ *                     example: 50
+ *                   created_at:
+ *                     type: string
+ *                     format: date-time
+ *                     example: '2025-06-17T21:00:00.000Z'
+ *       '401':
+ *         description: Não autorizado (token ausente, inválido ou expirado)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: 'Não autorizado'
+ */
 app.get('/points/extrato', ensureAuth, async (req, res) => {
   const { data: tx } = await supabase
     .from('point_transactions')
@@ -226,7 +594,65 @@ app.get('/points/extrato', ensureAuth, async (req, res) => {
   res.json(tx);
 });
 
-// --- 9. Caixinha de Pontos ---
+/**
+ * @openapi
+ * /caixinha/deposit:
+ *   post:
+ *     summary: Deposita pontos da conta normal para a caixinha do usuário
+ *     tags:
+ *       - Caixinha
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - amount
+ *             properties:
+ *               amount:
+ *                 type: integer
+ *                 description: Quantidade de pontos a depositar (deve ser maior que zero e não exceder o saldo disponível)
+ *                 minimum: 1
+ *                 example: 30
+ *     responses:
+ *       '200':
+ *         description: Depósito na caixinha realizado com sucesso.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Depósito na caixinha realizado.
+ *       '400':
+ *         description: Saldo insuficiente ou requisição inválida.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *             examples:
+ *               insufficientBalance:
+ *                 summary: Saldo insuficiente
+ *                 value:
+ *                   error: Saldo insuficiente
+ *       '401':
+ *         description: Não autorizado (token ausente, inválido ou expirado).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Não autorizado
+ */
 app.post('/caixinha/deposit', ensureAuth, async (req, res) => {
   const { amount } = req.body;
   const amt = Number(amount);
@@ -246,6 +672,65 @@ app.post('/caixinha/deposit', ensureAuth, async (req, res) => {
   res.json({ message: 'Depósito na caixinha realizado.' });
 });
 
+/**
+ * @openapi
+ * /caixinha/withdraw:
+ *   post:
+ *     summary: Resgata pontos da caixinha para a conta normal do usuário
+ *     tags:
+ *       - Caixinha
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - amount
+ *             properties:
+ *               amount:
+ *                 type: integer
+ *                 description: Quantidade de pontos a resgatar (deve ser maior que zero e não exceder o saldo da caixinha)
+ *                 minimum: 1
+ *                 example: 10
+ *     responses:
+ *       '200':
+ *         description: Resgate realizado com sucesso.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Resgate da caixinha realizado.
+ *       '400':
+ *         description: Saldo na caixinha insuficiente ou requisição inválida.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *             examples:
+ *               insufficientBalance:
+ *                 summary: Saldo insuficiente na caixinha
+ *                 value:
+ *                   error: Saldo na caixinha insuficiente
+ *       '401':
+ *         description: Não autorizado (token ausente, inválido ou expirado).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: Não autorizado
+ */
 app.post('/caixinha/withdraw', ensureAuth, async (req, res) => {
   const { amount } = req.body;
   const amt = Number(amount);
@@ -265,6 +750,59 @@ app.post('/caixinha/withdraw', ensureAuth, async (req, res) => {
   res.json({ message: 'Resgate da caixinha realizado.' });
 });
 
+/**
+ * @openapi
+ * /caixinha/extrato:
+ *   get:
+ *     summary: Retorna o extrato de transações da caixinha do usuário autenticado
+ *     tags:
+ *       - Caixinha
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: Lista de entradas e saídas da caixinha de pontos
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                     format: uuid
+ *                     example: "550e8400-e29b-41d4-a716-446655440000"
+ *                   user_id:
+ *                     type: string
+ *                     format: uuid
+ *                     example: "550e8400-e29b-41d4-a716-446655440000"
+ *                   type:
+ *                     type: string
+ *                     description: Tipo de transação na caixinha
+ *                     enum:
+ *                       - deposit
+ *                       - withdraw
+ *                     example: "deposit"
+ *                   amount:
+ *                     type: integer
+ *                     description: Quantidade de pontos movimentados
+ *                     example: 30
+ *                   created_at:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2025-06-17T21:05:00.000Z"
+ *       '401':
+ *         description: Não autorizado (token ausente, inválido ou expirado)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: "Não autorizado"
+ */
 app.get('/caixinha/extrato', ensureAuth, async (req, res) => {
   const { data } = await supabase
     .from('piggy_bank_transactions')
@@ -274,6 +812,53 @@ app.get('/caixinha/extrato', ensureAuth, async (req, res) => {
   res.json(data);
 });
 
+
+/**
+ * @openapi
+ * /points/saldo:
+ *   get:
+ *     summary: Retorna o saldo geral consolidado do usuário autenticado
+ *     tags:
+ *       - Points
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: Saldo normal e saldo da caixinha consolidados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 normal_balance:
+ *                   type: number
+ *                   description: Saldo da conta normal, somando recebimentos e subtraindo envios
+ *                   example: 120
+ *                 piggy_bank_balance:
+ *                   type: number
+ *                   description: Saldo atual da caixinha
+ *                   example: 45
+ *       '401':
+ *         description: Não autorizado (token ausente, inválido ou expirado)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: 'Não autorizado'
+ *       '500':
+ *         description: Erro interno ao obter ou calcular o saldo
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   example: 'Erro ao obter saldo base'
+ */
 app.get('/points/saldo', ensureAuth, async (req, res) => {
   const userId = req.userId;
 
