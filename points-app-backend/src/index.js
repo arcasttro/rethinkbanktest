@@ -315,6 +315,83 @@ app.get('/points/saldo', ensureAuth, async (req, res) => {
   });
 });
 
+app.use((req, res) => {
+  res.status(404).send(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Rethink Bank Test</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background-color: #202020;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Roboto', sans-serif;
+      overflow: hidden;
+    }
+    .wrapper {
+      text-align: center;
+      padding: 1rem;
+    }
+    .wrapper h1 {
+      font-size: clamp(2rem, 8vw, 4rem);
+      font-weight: 700;
+      background: linear-gradient(90deg, #00d1b2, #00e0c6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
+    }
+    .wrapper p {
+      color: #cccccc;
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      line-height: 1.5;
+      margin: 0.5rem 0;
+    }
+    .btn {
+      display: inline-block;
+      margin-top: 2rem;
+      padding: 0.75rem 2rem;
+      font-size: 1rem;
+      font-weight: 500;
+      color: #00d1b2;
+      border: 2px solid #00d1b2;
+      border-radius: 9999px;
+      text-decoration: none;
+      transition: background 0.3s ease, color 0.3s ease, transform 0.2s ease;
+    }
+    .btn:hover {
+      background-color: #00d1b2;
+      color: #202020;
+      transform: translateY(-2px) scale(1.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+  <img
+      class="logo"
+      src="https://755udsewnzdtcvpg.public.blob.vercel-storage.com/images/logosRethink/logo_negativo-QSqX1DU5U33GczS3mR856luwzvRMVI.svg"
+      alt="Rethink Logo" width="200"
+    />
+    <h1>Rethink Bank Test</h1>
+    <p>Se você está tentando acessar esta página diretamente,<br>
+       significa que você precisa ler com atenção as instruções do desafio.</p>
+    <p>Tenha atenção e calma, esperamos por você em nosso time!</p>
+    <a class="btn" 
+       href="https://github.com/rethink-projects/rethinkbanktest?tab=readme-ov-file#readme" 
+       target="_blank">
+      Ler instruções do desafio
+    </a>
+  </div>
+</body>
+</html>`);
+});
+
+
 
 // Inicia o servidor
 const PORT = process.env.PORT || 3000;
