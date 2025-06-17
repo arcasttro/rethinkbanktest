@@ -27,8 +27,7 @@ const options = {
 export const swaggerSpec = swaggerJSDoc(options);
 
 export function setupSwagger(app) {
-  // opcional: expõe o JSON em /docs/swagger.json
-  app.get('/docs/swagger.json', (req, res) => res.json(swaggerSpec));
+
 
   // serve: monta HTML + JS + CSS automaticamente em /docs
   app.use(
@@ -51,9 +50,7 @@ export function setupSwagger(app) {
       customfavIcon:
         'https://755udsewnzdtcvpg.public.blob.vercel-storage.com/images/logosRethink/logo_negativo-QSqX1DU5U33GczS3mR856luwzvRMVI.svg',
       customSiteTitle: 'Points App API Docs',
-      swaggerOptions: {
-        url: '/docs/swagger.json'
-      }
+      
     })
   );
 }
