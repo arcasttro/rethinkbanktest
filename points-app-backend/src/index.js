@@ -4,12 +4,50 @@ import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import { supabase } from './supabaseClient.js';
-import { setupSwagger } from './swagger.js';
+import { swaggerSpec } from './swagger.js';
 
 
 dotenv.config();
 const app = express();
-setupSwagger(app);
+
+
+app.get('/docs/swagger.json', (req, res) => {
+  res.json(swaggerSpec);
+});
+
+
+app.get('/docs', (req, res) => {
+  res.send(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Points App API Docs</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist/swagger-ui.css" />
+  <style>
+    body { margin:0; }
+    .swagger-ui .topbar { background-color: #202020; }
+  </style>
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
+  <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-standalone-preset.js"></script>
+  <script>
+    window.onload = () => {
+      SwaggerUIBundle({
+        url: '/docs/swagger.json',
+        dom_id: '#swagger-ui',
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        layout: 'StandaloneLayout'
+      });
+    };
+  </script>
+</body>
+</html>`);
+});
 
 app.use(express.json());
 
