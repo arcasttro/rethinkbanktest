@@ -194,6 +194,8 @@ app.post('/cadastro', async (req, res) => {
   if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\W).{8,}$/.test(password)) {
     return res.status(400).json({ error: 'Senha fraca' });
   }
+   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    return res.status(400).json({ error: 'Email inválido' });
 
   // Hash da senha
   const password_hash = await bcrypt.hash(password, 10);
@@ -201,7 +203,7 @@ app.post('/cadastro', async (req, res) => {
   // Insere no Supabase e retorna os dados
   const { data, error } = await supabase
     .from('users')
-    .insert([{ cpf, full_name, email, password_hash }])
+    .insert([{ cpf, full_name, email, password_hash, normal_balance: 100  }])
     .select()
     .single();
 
