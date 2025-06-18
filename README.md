@@ -10,7 +10,7 @@ Este mesmo repositório está online, em https://points-app-backend.vercel.app/
 
 Através deste link, você poderá fazer requisições diretas para a API para cumprir seu desafio.
 
-No Rethink Test Bank o usuário pode se cadastrar, enviar ou receber pontos e também guardar pontos em caixinhas. A rota de cadastro é a única pública, todas as demais são protegidas por token que é adquirido na rota de login. Atenção: o Token tem duração de apenas 10 minutos.
+No Rethink Test Bank o usuário pode se cadastrar, enviar ou receber pontos e também guardar pontos em caixinhas. A rota de cadastro é a única pública, todas as demais são protegidas por token que é adquirido na rota de login. Atenção: o Token tem duração de apenas 10 minutos. Todo novo usuário já começa com 100 pontos.
 
 A jornada do usuário é:
 
@@ -48,7 +48,9 @@ Além disso, no readme.md deixe claro:
 
 ## Rotas e Contratos
 
-Todas estas rotas são verificáveis via Swagger que está na rota /docs
+**Swagger**
+
+Todas estas rotas são verificáveis via Swagger que está na rota `/docs `
 
 ### 1. Cadastro de Usuário
 
@@ -68,8 +70,11 @@ Todas estas rotas são verificáveis via Swagger que está na rota /docs
 
 Validação:
 CPF: 11 números | Único
+
 Full_name: pelo menos dois nomes
+
 email: Único
+
 password: Pelo menos um símbolo especial, números, uma letra maiúscula e uma minúscula e pelo menos 8 caracteres no total.
 
 **Response 201**
@@ -280,7 +285,5 @@ Authorization: Bearer `<session_jwt>`
 ---
 
 ## Sucesso no teste
-
-Ah, o joao@example.com com a senha Senha@123 normalmente tem pontos para enviar.
 
 Esperamos você em breve com a gente! :D
