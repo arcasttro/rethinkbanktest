@@ -1,36 +1,55 @@
-# Rethink Bank Test
+# Cenários de Testes - RethinkBankTest
 
-Parabéns, se este teste chegou até você significa que confiamos no potencial do seu trabalho e agora precisamos verificar suas habilidades técnicas. Para isso, montamos um desafio técnico que simula o ambiente real em que você atuará.
+Este documento descreve de forma simples os testes implementados na aplicação.
 
-## Introdução
+## O que testamos
 
-Este é o repositório do Rethink Bank Test. Ele está disponível para você consultar as lógicas e regras de negócio implementadas no código principal. Toda a lógica está em src/index.js
+### Autenticação
+Testamos o fluxo completo de um usuário: cadastro, confirmação de email, login e exclusão de conta. Cobrimos casos de sucesso e também cenários de erro como senhas incorretas, dados inválidos e tentativas de acesso não autorizado.
 
-Este mesmo repositório está online, em https://points-app-backend.vercel.app/
+### Sistema de Pontos
+Verificamos se o usuário consegue enviar pontos para outros usuários, se o saldo é atualizado corretamente e se o extrato mostra as transações. Também testamos casos de erro como saldo insuficiente e valores negativos.
 
-Através deste link, você poderá fazer requisições diretas para a API para cumprir seu desafio.
+### Caixinha
+Testamos se o usuário consegue depositar pontos na caixinha, sacar quando necessário e se os saldos são mantidos corretamente. Validamos se a API impede operações inválidas como depósitos negativos.
 
-No Rethink Test Bank o usuário pode se cadastrar, enviar ou receber pontos e também guardar pontos em caixinhas. A rota de cadastro é a única pública, todas as demais são protegidas por token que é adquirido na rota de login. Atenção: o Token tem duração de apenas 10 minutos. Todo novo usuário já começa com 100 pontos.
+## Como testamos
 
-A jornada do usuário é:
+Usamos Jest para executar os testes e Supertest para fazer as requisições HTTP. Cada teste verifica:
+- Se a resposta tem o status correto
+- Se os campos esperados existem na resposta
+- Se os tipos de dados estão corretos
+- Se as mensagens contêm o texto esperado
 
-- Cadastra
-- Confirma email
-- Faz login
-- Envia pontos a alguém
-- Guarda parte do saldo na caixinha
-- Confere o saldo
-- Exclui sua conta
+## Problemas encontrados
 
-Calma, os endpoints e os contratos estão logo abaixo.
+Durante os testes, identificamos alguns bugs:
+- A exclusão de conta não está funcionando completamente
+- A API permite depósitos de valores negativos na caixinha
+- Algumas mensagens de erro não estão padronizadas
 
-## Instruções
+## Como executar
 
-Você deverá:
+```bash
+npm test                    # roda todos os testes
+```
 
-1- Criar testes end-to-end automatizados da jornada do usuário usando Jest OU Karatê OU Robot Framework. Os testes deverão registrar evidências.
+## Estrutura dos arquivos
 
-2- Responder as seguintes perguntas:
+- `tests/auth.test.js` - testes de autenticação
+- `tests/points.test.js` - testes do sistema de pontos  
+- `tests/caixinha.test.js` - testes da funcionalidade caixinha
+- `utils/helpers.js` - funções auxiliares para os testes
+- `config.js` - configurações da aplicação
+
+## Resumo
+
+Implementamos uma suíte de testes que cobre os principais fluxos da aplicação, validando tanto os casos de sucesso quanto os cenários de erro. Os testes ajudam a identificar problemas e garantir que as funcionalidades básicas estejam funcionando.
+
+
+---
+
+# 2- Responder as seguintes perguntas:
 
     a- Há bugs? Se sim, quais são e quais são os cenários esperados?
 
@@ -38,252 +57,43 @@ Você deverá:
 
     c- Diante do cenário, o sistema está pronto para subir em produção?
 
-Os testes end-to-end deverão ser entregues em um repositório público do GitHub, e as respostas do item 2 deverão estar no readme.md do repositório.
-
-Além disso, no readme.md deixe claro:
-
-- A forma de rodar o seus testes (ajuda o colega a rodar, configura um comando no package.json pra ir tudo de uma vez, por favor)
-
-- As respostas do Item 2.
-
-## Rotas e Contratos
-
-**Swagger**
-
-Todas estas rotas são verificáveis via Swagger que está na rota `/docs `
-
-### 1. Cadastro de Usuário
-
-**POST** `/cadastro`
-
-**Request Body**
-
-```json
-{
-  "cpf": "12345678901",
-  "full_name": "João da Silva",
-  "email": "joao@example.com",
-  "password": "Senha@123",
-  "confirmPassword": "Senha@123"
-}
-```
-
-Validação:
-CPF: 11 números | Único
-
-Full_name: pelo menos dois nomes
-
-email: Único
-
-password: Pelo menos um símbolo especial, números, uma letra maiúscula e uma minúscula e pelo menos 8 caracteres no total.
-
-**Response 201**
-
-```json
-{
-  "message": "Cadastro realizado com sucesso.",
-  "confirmToken": "<jwt_token>"
-}
-```
-
----
-
-### 2. Confirmação de E-mail
-
-**GET** `/confirm-email?token=<confirmToken>`
-
-**Query Params**
-
-| Parâmetro | Descrição                |
-| --------- | ------------------------ |
-| token     | JWT de confirmação (24h) |
-
-**Response 200** (texto)
-
-E-mail confirmado com sucesso.
-
----
-
-### 3. Login
-
-**POST** `/login`
-
-**Request Body**
-
-```json
-{
-  "email": "joao@example.com",
-  "password": "Senha@123"
-}
-```
-
-**Response 200**
-
-```json
-{
-  "token": "<session_jwt>"
-}
-```
-
----
-
-### 4. Excluir Conta (Soft Delete)
-
-**DELETE** `/account`
-
-**Headers**\
-Authorization: Bearer `<session_jwt>`
-
-**Request Body**
-
-```json
-{
-  "password": "Senha@123"
-}
-```
-
-**Response 200**
-
-```json
-{
-  "message": "Conta marcada como deletada."
-}
-```
-
----
-
-### 5. Enviar Pontos
-
-**POST** `/points/send`
-
-**Headers**\
-Authorization: Bearer `<session_jwt>`
-
-**Request Body**
-
-```json
-{
-  "recipientCpf": "10987654321",
-  "amount": 50
-}
-```
-
-**Response 200**
-
-```json
-{
-  "message": "Pontos enviados com sucesso."
-}
-```
-
----
-
-### 6. Extrato de Pontos
-
-**GET** `/points/extrato`
-
-**Headers**\
-Authorization: Bearer `<session_jwt>`
-
-**Response 200**
-
-```json
-[
-  {
-    "id": "uuid",
-    "from_user": "uuid",
-    "to_user": "uuid",
-    "amount": 50,
-    "created_at": "2025-06-17T21:00:00.000Z"
-  },
-  ...
-]
-```
-
----
-
-### 7. Caixinha de Pontos
-
-#### 7.1 Deposit
-
-**POST** `/caixinha/deposit`
-
-**Headers**\
-Authorization: Bearer `<session_jwt>`
-
-**Request Body**
-
-```json
-{ "amount": 30 }
-```
-
-**Response 200**
-
-```json
-{ "message": "Depósito na caixinha realizado." }
-```
-
-#### 7.2 Withdraw
-
-**POST** `/caixinha/withdraw`
-
-**Headers**\
-Authorization: Bearer `<session_jwt>`
-
-**Request Body**
-
-```json
-{ "amount": 10 }
-```
-
-**Response 200**
-
-```json
-{ "message": "Resgate da caixinha realizado." }
-```
-
-#### 7.3 Extrato
-
-**GET** `/caixinha/extrato`
-
-**Headers**\
-Authorization: Bearer `<session_jwt>`
-
-**Response 200**
-
-```json
-[
-  {
-    "id": "uuid",
-    "user_id": "uuid",
-    "type": "deposit",
-    "amount": 30,
-    "created_at": "2025-06-17T21:05:00.000Z"
-  },
-  ...
-]
-```
-
----
-
-### 8. Saldo Geral
-
-**GET** `/points/saldo`
-
-**Headers**\
-Authorization: Bearer `<session_jwt>`
-
-**Response 200**
-
-```json
-{
-  "normal_balance": 120,
-  "piggy_bank_balance": 45
-}
-```
-
----
-
-## Sucesso no teste
-
-Esperamos você em breve com a gente! :D
+## Bugs:
+- B1 Usuário consegue fazer login em uma conta que passou por soft-delete
+  - Esperado: que a conta fosse bloqueada para acesso comum
+  - Criticidade: Alta
+- B2 Saldo não é alterado após depósito na caixinha
+  - Esperado: Que as movimentações de pontos e caixinha reflitam no banco de dados em tempo real
+  - Criticidade: Alta
+- B3 Saques da caixinha não são contabilizados no extrato
+  - Esperado: Que extrato reflita as movimentações em tempo real (similar ao B2)
+  - Criticidade: Alta
+- B4 Não é possível sacar o valor depositado na caixinha
+  - Esperado: Que o usuário possa sacar
+  - Criticidade: Alta
+- B5 Endpoint de depósito na caixinha permite valores negativos
+  - Esperado: Que permita valores acima de 0 e menores que o saldo total
+  - Criticidade: Baixa
+- B6 Aplicação não suporta a execução de todos os cenarios de testes desenvolvidos
+  - Esperado: Um ambiente mais robusto e estável para execução
+  - Criticidade: Alta
+- B7 Mensagens de erro e status_code despadronizados
+  - Esperado: Utilização das boas práticas do protocolo HTTP
+  - Criticidade: Baixa
+
+## c- Diante do cenário, o sistema está pronto para subir em produção?
+Não, além de apresentar os bugs reportados acima, a aplicação se mostra muito frágil para ser liberada ao público. 
+É altamente recomendado uma validação de dois fatores na etapa de confirmação de senha.
+Não se faz necessário a utilização de e-mail, se o mesmo não é utilizado de forma prática em nenhum momento.
+É altamente recomendado uma validação mais minuciosa no campo de CPF.
+É altamente recomendado a limitação de requisições nos endpoits, principalmente de login, de forma a evitar ataques DDOS e invasões.
+É altamente recomendado o desenvolvimento da funcionalidade de "Esqueci minha senha".
+
+# Observações
+Na raiz desse projeto, você pode encontrar um mapa-mental.jpeg, onde sintetizei algumas informações do projeto, como:
+- Dúvidas para o PO
+- Bugs
+- Possíveis Riscos
+- Cenários de testes
+- Critérios de aceitação
+- Funcionalidades
+- etc.

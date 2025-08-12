@@ -1,0 +1,22 @@
+{
+  "name": "rethinkbanktest",
+  "version": "1.0.0",
+  "description": "Testes automatizados para aplicação de pontos e caixinha",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": ["testes", "jest", "api", "pontos", "caixinha"],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.1.4",
+    "faker-br": "^0.5.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testTimeout": 30000,
+    "verbose": true
+  }
+}
